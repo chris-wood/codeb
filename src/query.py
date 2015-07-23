@@ -19,17 +19,35 @@ class CodeDatabase(object):
 class CodeQuery(object):
     pass
 
+class VisitorContext():
+    def __init__(self):
+        self.names = []
+        pass
+
+    def addName(self, name):
+        self.names.append(name)
+
+    def __str__(self):
+        return str(self.names)
+
 class SimpleVisitor(ast.NodeVisitor):
     def generic_visit(self, node):
         print type(node).__name__ # print object's class name
         ast.NodeVisitor.generic_visit(self, node) # call parent's visit to traverse to children
     
+    def visit_Module(self, node):
+        self.context = VisitorContext()
+        self.generic_visit(node)
+        
+        print self.context
+
     def visit_Load(self, node):
         print "Cutting tree at the LOAD"
         pass
 
     def visit_Name(self, node):
         print "Name:", node.id
+        self.context.addName(node.id)
 
 # query -> query plan (visitor logic) -> executor
 visitor = SimpleVisitor()
