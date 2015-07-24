@@ -8,8 +8,23 @@ def helloWorld():
 helloWorld()
 """
 
-helloTree = ast.parse(helloProgram)
-exec(compile(helloTree, filename="<ast>", mode="exec"))
+sqlInjectionProgram = """
+def find_question(request):
+    question_text = request.POST.get('question_text', None)
+
+    if question_text is None:
+        return HttpResponseRedirect(reverse('polls:index'))
+
+    qry = "SELECT * FROM polls_question WHERE question_text='%s'" % question_text
+    try:
+        question = Question.objects.raw(qry)[:1][0]
+    except Question.DoesNotExist as e:
+        raise Http404('Question does not exist!')
+
+    print question
+
+    return render(request, 'polls/detail.html', {'question': question})
+"""
 
 class CodeDatabase(object):
     def __init__(self, program):
@@ -44,13 +59,21 @@ class SimpleVisitor(ast.NodeVisitor):
         print self.context
 
     def visit_Load(self, node):
-        print "Cutting tree at the LOAD"
+        print "Cutting tree at the LOAD, i.e., not recursing"
         pass
+
+    # def visit_FunctionDef(self, node):
+    #     print node
 
     def visit_Name(self, node):
         print "Name:", node.id
         self.context.addName(node.id)
 
+helloTree = ast.parse(helloProgram)
+sqlTree = ast.parse(sqlInjectionProgram)
+# exec(compile(helloTree, filename="<ast>", mode="exec"))
+
 # query -> query plan (visitor logic) -> executor
 visitor = SimpleVisitor()
 visitor.visit(helloTree)
+visitor.visit(sqlTree)
