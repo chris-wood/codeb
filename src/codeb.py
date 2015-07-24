@@ -17,6 +17,8 @@ class CodeDatabase(object):
         self.ast = ast.parse(program)
 
 class CodeQuery(object):
+    ''' TODO: sql grammar parser
+    '''
     pass
 
 class VisitorContext():
@@ -34,11 +36,11 @@ class SimpleVisitor(ast.NodeVisitor):
     def generic_visit(self, node):
         print type(node).__name__ # print object's class name
         ast.NodeVisitor.generic_visit(self, node) # call parent's visit to traverse to children
-    
+
     def visit_Module(self, node):
         self.context = VisitorContext()
         self.generic_visit(node)
-        
+
         print self.context
 
     def visit_Load(self, node):
@@ -52,4 +54,3 @@ class SimpleVisitor(ast.NodeVisitor):
 # query -> query plan (visitor logic) -> executor
 visitor = SimpleVisitor()
 visitor.visit(helloTree)
-
