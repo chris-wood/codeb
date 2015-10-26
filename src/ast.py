@@ -1,42 +1,13 @@
-#-----------------------------------------------------------------
-# pycparser: explore_ast.py
-#
-# This example demonstrates how to "explore" the AST created by
-# pycparser to understand its structure. The AST is a n-nary tree
-# of nodes, each node having several children, each with a name.
-# Just read the code, and let the comments guide you. The lines
-# beginning with #~ can be uncommented to print out useful
-# information from the AST.
-# It helps to have the pycparser/_c_ast.cfg file in front of you.
-#
-# Copyright (C) 2008-2013, Eli Bendersky
-# License: BSD
-#-----------------------------------------------------------------
 from __future__ import print_function
 import sys
 import re
 
-# This is not required if you've installed pycparser into
-# your site-packages/ with setup.py
-#
 sys.path.extend(['.', '..', '/Users/cwood/Projects/pycparser/'])
 
-from pycparser import c_parser, c_ast
+from pycparser import c_parser, c_ast, plyparser
 
-# This is some C source to parse. Note that pycparser must begin
-# at the top level of the C file, i.e. with either declarations
-# or function definitions (this is called "external declarations"
-# in C grammar lingo)
-#
-# Also, a C parser must have all the types declared in order to
-# build the correct AST. It doesn't matter what they're declared
-# to, so I've inserted the dummy typedef in the code to let the
-# parser know Hash and Node are types. You don't need to do it
-# when parsing real, correct C code.
-
-# typedef int Node, Hash;
 mytext = r"""
-    typedef int Node, Hash;    
+    typedef int Node, Hash;
 
     void HashPrint(Hash* hash, void (*PrintFunc)(char*, char*))
     {
@@ -71,9 +42,6 @@ def comment_remover(text):
     )
     return re.sub(pattern, replacer, text)
 
-# Create the parser and ask to parse the text. parse() will throw
-# a ParseError if there's an error in the code
-#
 parser = c_parser.CParser()
 
 fileIn = open(sys.argv[1], "r")
@@ -82,12 +50,28 @@ for line in fileIn.readlines():
     if not line.startswith("#"):
         lines.append(line)
 text = comment_remover(''.join(lines))
-# print(text)
 
-text = mytext
+done = False
+count = 0
+while not done:
+    try:
+        count += 1
+        ast = parser.parse(text, filename='<none>')
+        done = True
+    except plyparser.ParseError as e:
+        newType = str(e).split(":")[-1]
+        newTypeText = "typedef void %s;\n" % (newType)
+        text = newTypeText + text
 
-print(text)
-ast = parser.parse(text, filename='<none>')
+        # print(text)
+        print(e)
+
+        if count >= 2:
+            sys.exit(1)
+
+        # sys.exit(1)
+    except:
+        pass
 
 # Uncomment the following line to see the AST in a nice, human
 # readable way. show() is the most useful tool in exploring ASTs
@@ -188,5 +172,3 @@ for ext in ast.ext:
 # Specifically, see the cdecl.py example for a non-trivial demonstration of what
 # you can do by recursively going through the AST.
 #
-
-
